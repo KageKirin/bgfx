@@ -5,8 +5,9 @@
 
 #include "common.h"
 #include "bgfx_utils.h"
+#include <bx/float4x4_t.h>
 
-struct PosColorVertex
+struct PosColorVertexBlending
 {
 	float m_x;
 	float m_y;
@@ -29,210 +30,335 @@ struct PosColorVertex
 	static bgfx::VertexDecl ms_decl;
 };
 
-bgfx::VertexDecl PosColorVertex::ms_decl;
+bgfx::VertexDecl PosColorVertexBlending::ms_decl;
 
-static PosColorVertex s_cubeVertices[] =
+#define GEN_CUBE_VERTICES(blendindices_x, blendindices_y, blendindices_z, blendindices_w, blendweights_x, blendweights_y, blendweights_z, blendweights_w) \
+	{-1.0f,  1.0f,  1.0f, 0xff000000, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{-1.0f,  1.0f, -1.0f, 0xffff0000, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{-1.0f, -1.0f, -1.0f, 0xffffff00, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }, \
+	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {blendindices_x, blendindices_y, blendindices_z, blendindices_w}, {blendweights_x, blendweights_y, blendweights_z, blendweights_w} }
+
+
+static PosColorVertexBlending s_cubeVertices[] =
 {
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {1, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
+	GEN_CUBE_VERTICES(0, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,0, 0, 0, 1.0f, 0.0f, 0.0f, 0.0f),
 
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {0, 2, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
+	GEN_CUBE_VERTICES(0, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,11, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
 
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {0, 0, 3, 0}, {0.0f, 0.0f, 1.0f, 0.0f} },
+	GEN_CUBE_VERTICES(0, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,0, 12, 0, 1.0f, 0.0f, 1.0f, 0.0f),
 
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {0, 0, 0, 4}, {0.0f, 0.0f, 0.0f, 1.0f} },
+	GEN_CUBE_VERTICES(0, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(1, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(2, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(3, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(4, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(5, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(6, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(7, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(8, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(9, 0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(10,0, 0, 13, 1.0f, 0.0f, 0.0f, 1.0f),
 
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {5, 0, 0, 0}, {1.0f, 0.0f, 0.0f, 0.0f} },
+	GEN_CUBE_VERTICES(0, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,14, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
 
-	{-1.0f,  1.0f,  1.0f, 0xff000000, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f,  1.0f, 0xff0000ff, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f,  1.0f, 0xff00ff00, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f,  1.0f, 0xff00ffff, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f,  1.0f, -1.0f, 0xffff0000, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f,  1.0f, -1.0f, 0xffff00ff, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{-1.0f, -1.0f, -1.0f, 0xffffff00, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
-	{ 1.0f, -1.0f, -1.0f, 0xffffffff, {0, 6, 0, 0}, {0.0f, 1.0f, 0.0f, 0.0f} },
+	GEN_CUBE_VERTICES(0, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,0, 15, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+
+	GEN_CUBE_VERTICES(0, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(1, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(2, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(3, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(4, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(5, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(6, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(7, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(8, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(9, 0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(10,0, 0, 16, 1.0f, 0.0f, 0.0f, 1.0f),
+
+	GEN_CUBE_VERTICES(0, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,17, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+
+	GEN_CUBE_VERTICES(0, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,0, 18, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+
+	GEN_CUBE_VERTICES(0, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(1, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(2, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(3, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(4, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(5, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(6, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(7, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(8, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(9, 0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(10,0, 0, 19, 1.0f, 0.0f, 0.0f, 1.0f),
+
+	GEN_CUBE_VERTICES(0, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,20, 0, 0, 1.0f, 1.0f, 0.0f, 0.0f),
+
+	GEN_CUBE_VERTICES(0, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(1, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(2, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(3, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(4, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(5, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(6, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(7, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(8, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(9, 0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+	GEN_CUBE_VERTICES(10,0, 21, 0, 1.0f, 0.0f, 1.0f, 0.0f),
+
+	GEN_CUBE_VERTICES(0, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(1, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(2, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(3, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(4, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(5, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(6, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(7, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(8, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(9, 0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
+	GEN_CUBE_VERTICES(10,0, 0, 22, 1.0f, 0.0f, 0.0f, 1.0f),
 };
+
+
+#define GEN_CUBE_INDICES(offset) \
+	offset + 0, offset + 1, offset + 2, \
+	offset + 1, offset + 3, offset + 2, \
+	offset + 4, offset + 6, offset + 5, \
+	offset + 5, offset + 6, offset + 7, \
+	offset + 0, offset + 2, offset + 4, \
+	offset + 4, offset + 2, offset + 6, \
+	offset + 1, offset + 5, offset + 3, \
+	offset + 5, offset + 7, offset + 3, \
+	offset + 0, offset + 4, offset + 1, \
+	offset + 4, offset + 5, offset + 1, \
+	offset + 2, offset + 3, offset + 6, \
+	offset + 6, offset + 3, offset + 7
 
 static const uint16_t s_cubeTriList[] =
 {
-	0, 1, 2, // 0
-	1, 3, 2,
-	4, 6, 5, // 2
-	5, 6, 7,
-	0, 2, 4, // 4
-	4, 2, 6,
-	1, 5, 3, // 6
-	5, 7, 3,
-	0, 4, 1, // 8
-	4, 5, 1,
-	2, 3, 6, // 10
-	6, 3, 7,
+	GEN_CUBE_INDICES(0),
+	GEN_CUBE_INDICES(1),
+	GEN_CUBE_INDICES(2),
+	GEN_CUBE_INDICES(3),
+	GEN_CUBE_INDICES(4),
+	GEN_CUBE_INDICES(5),
+	GEN_CUBE_INDICES(6),
+	GEN_CUBE_INDICES(7),
+	GEN_CUBE_INDICES(8),
+	GEN_CUBE_INDICES(9),
+	GEN_CUBE_INDICES(10),
 
+	GEN_CUBE_INDICES(11 + 0),
+	GEN_CUBE_INDICES(11 + 1),
+	GEN_CUBE_INDICES(11 + 2),
+	GEN_CUBE_INDICES(11 + 3),
+	GEN_CUBE_INDICES(11 + 4),
+	GEN_CUBE_INDICES(11 + 5),
+	GEN_CUBE_INDICES(11 + 6),
+	GEN_CUBE_INDICES(11 + 7),
+	GEN_CUBE_INDICES(11 + 8),
+	GEN_CUBE_INDICES(11 + 9),
+	GEN_CUBE_INDICES(11 + 10),
 
-	8+0, 8+1, 8+2, // 0
-	8+1, 8+3, 8+2,
-	8+4, 8+6, 8+5, // 2
-	8+5, 8+6, 8+7,
-	8+0, 8+2, 8+4, // 4
-	8+4, 8+2, 8+6,
-	8+1, 8+5, 8+3, // 6
-	8+5, 8+7, 8+3,
-	8+0, 8+4, 8+1, // 8
-	8+4, 8+5, 8+1,
-	8+2, 8+3, 8+6, // 10
-	8+6, 8+3, 8+7,
+	GEN_CUBE_INDICES(22 + 0),
+	GEN_CUBE_INDICES(22 + 1),
+	GEN_CUBE_INDICES(22 + 2),
+	GEN_CUBE_INDICES(22 + 3),
+	GEN_CUBE_INDICES(22 + 4),
+	GEN_CUBE_INDICES(22 + 5),
+	GEN_CUBE_INDICES(22 + 6),
+	GEN_CUBE_INDICES(22 + 7),
+	GEN_CUBE_INDICES(22 + 8),
+	GEN_CUBE_INDICES(22 + 9),
+	GEN_CUBE_INDICES(22 + 10),	
 
+	GEN_CUBE_INDICES(33 + 0),
+	GEN_CUBE_INDICES(33 + 1),
+	GEN_CUBE_INDICES(33 + 2),
+	GEN_CUBE_INDICES(33 + 3),
+	GEN_CUBE_INDICES(33 + 4),
+	GEN_CUBE_INDICES(33 + 5),
+	GEN_CUBE_INDICES(33 + 6),
+	GEN_CUBE_INDICES(33 + 7),
+	GEN_CUBE_INDICES(33 + 8),
+	GEN_CUBE_INDICES(33 + 9),
+	GEN_CUBE_INDICES(33 + 10),	
 
-	16+0, 16+1, 16+2, // 0
-	16+1, 16+3, 16+2,
-	16+4, 16+6, 16+5, // 2
-	16+5, 16+6, 16+7,
-	16+0, 16+2, 16+4, // 4
-	16+4, 16+2, 16+6,
-	16+1, 16+5, 16+3, // 6
-	16+5, 16+7, 16+3,
-	16+0, 16+4, 16+1, // 8
-	16+4, 16+5, 16+1,
-	16+2, 16+3, 16+6, // 10
-	16+6, 16+3, 16+7,
+	GEN_CUBE_INDICES(44 + 0),
+	GEN_CUBE_INDICES(44 + 1),
+	GEN_CUBE_INDICES(44 + 2),
+	GEN_CUBE_INDICES(44 + 3),
+	GEN_CUBE_INDICES(44 + 4),
+	GEN_CUBE_INDICES(44 + 5),
+	GEN_CUBE_INDICES(44 + 6),
+	GEN_CUBE_INDICES(44 + 7),
+	GEN_CUBE_INDICES(44 + 8),
+	GEN_CUBE_INDICES(44 + 9),
+	GEN_CUBE_INDICES(44 + 10),	
 
+	GEN_CUBE_INDICES(55 + 0),
+	GEN_CUBE_INDICES(55 + 1),
+	GEN_CUBE_INDICES(55 + 2),
+	GEN_CUBE_INDICES(55 + 3),
+	GEN_CUBE_INDICES(55 + 4),
+	GEN_CUBE_INDICES(55 + 5),
+	GEN_CUBE_INDICES(55 + 6),
+	GEN_CUBE_INDICES(55 + 7),
+	GEN_CUBE_INDICES(55 + 8),
+	GEN_CUBE_INDICES(55 + 9),
+	GEN_CUBE_INDICES(55 + 10),	
 
-	24+0, 24+1, 24+2, // 0
-	24+1, 24+3, 24+2,
-	24+4, 24+6, 24+5, // 2
-	24+5, 24+6, 24+7,
-	24+0, 24+2, 24+4, // 4
-	24+4, 24+2, 24+6,
-	24+1, 24+5, 24+3, // 6
-	24+5, 24+7, 24+3,
-	24+0, 24+4, 24+1, // 8
-	24+4, 24+5, 24+1,
-	24+2, 24+3, 24+6, // 10
-	24+6, 24+3, 24+7,
+	GEN_CUBE_INDICES(66 + 0),
+	GEN_CUBE_INDICES(66 + 1),
+	GEN_CUBE_INDICES(66 + 2),
+	GEN_CUBE_INDICES(66 + 3),
+	GEN_CUBE_INDICES(66 + 4),
+	GEN_CUBE_INDICES(66 + 5),
+	GEN_CUBE_INDICES(66 + 6),
+	GEN_CUBE_INDICES(66 + 7),
+	GEN_CUBE_INDICES(66 + 8),
+	GEN_CUBE_INDICES(66 + 9),
+	GEN_CUBE_INDICES(66 + 10),	
 
+	GEN_CUBE_INDICES(77 + 0),
+	GEN_CUBE_INDICES(77 + 1),
+	GEN_CUBE_INDICES(77 + 2),
+	GEN_CUBE_INDICES(77 + 3),
+	GEN_CUBE_INDICES(77 + 4),
+	GEN_CUBE_INDICES(77 + 5),
+	GEN_CUBE_INDICES(77 + 6),
+	GEN_CUBE_INDICES(77 + 7),
+	GEN_CUBE_INDICES(77 + 8),
+	GEN_CUBE_INDICES(77 + 9),
+	GEN_CUBE_INDICES(77 + 10),	
 
-	32+0, 32+1, 32+2, // 0
-	32+1, 32+3, 32+2,
-	32+4, 32+6, 32+5, // 2
-	32+5, 32+6, 32+7,
-	32+0, 32+2, 32+4, // 4
-	32+4, 32+2, 32+6,
-	32+1, 32+5, 32+3, // 6
-	32+5, 32+7, 32+3,
-	32+0, 32+4, 32+1, // 8
-	32+4, 32+5, 32+1,
-	32+2, 32+3, 32+6, // 10
-	32+6, 32+3, 32+7,
+	GEN_CUBE_INDICES(88 + 0),
+	GEN_CUBE_INDICES(88 + 1),
+	GEN_CUBE_INDICES(88 + 2),
+	GEN_CUBE_INDICES(88 + 3),
+	GEN_CUBE_INDICES(88 + 4),
+	GEN_CUBE_INDICES(88 + 5),
+	GEN_CUBE_INDICES(88 + 6),
+	GEN_CUBE_INDICES(88 + 7),
+	GEN_CUBE_INDICES(88 + 8),
+	GEN_CUBE_INDICES(88 + 9),
+	GEN_CUBE_INDICES(88 + 10),	
+
+	GEN_CUBE_INDICES(99 + 0),
+	GEN_CUBE_INDICES(99 + 1),
+	GEN_CUBE_INDICES(99 + 2),
+	GEN_CUBE_INDICES(99 + 3),
+	GEN_CUBE_INDICES(99 + 4),
+	GEN_CUBE_INDICES(99 + 5),
+	GEN_CUBE_INDICES(99 + 6),
+	GEN_CUBE_INDICES(99 + 7),
+	GEN_CUBE_INDICES(99 + 8),
+	GEN_CUBE_INDICES(99 + 9),
+	GEN_CUBE_INDICES(99 + 10),	
+
+	GEN_CUBE_INDICES(110 + 0),
+	GEN_CUBE_INDICES(110 + 1),
+	GEN_CUBE_INDICES(110 + 2),
+	GEN_CUBE_INDICES(110 + 3),
+	GEN_CUBE_INDICES(110 + 4),
+	GEN_CUBE_INDICES(110 + 5),
+	GEN_CUBE_INDICES(110 + 6),
+	GEN_CUBE_INDICES(110 + 7),
+	GEN_CUBE_INDICES(110 + 8),
+	GEN_CUBE_INDICES(110 + 9),
+	GEN_CUBE_INDICES(110 + 10),	
 };
 
-static const uint16_t s_cubeTriStrip[] =
-{
-	0, 1, 2,
-	3,
-	7,
-	1,
-	5,
-	0,
-	4,
-	2,
-	6,
-	7,
-	4,
-	5,
 
-	8+0, 8+1, 8+2,
-	8+3,
-	8+7,
-	8+1,
-	8+5,
-	8+0,
-	8+4,
-	8+2,
-	8+6,
-	8+7,
-	8+4,
-	8+5,
-
-	16+0, 16+1, 16+2,
-	16+3,
-	16+7,
-	16+1,
-	16+5,
-	16+0,
-	16+4,
-	16+2,
-	16+6,
-	16+7,
-	16+4,
-	16+5,
-
-	24+0, 24+1, 24+2,
-	24+3,
-	24+7,
-	24+1,
-	24+5,
-	24+0,
-	24+4,
-	24+2,
-	24+6,
-	24+7,
-	24+4,
-	24+5,
-
-	32+0, 32+1, 32+2,
-	32+3,
-	32+7,
-	32+1,
-	32+5,
-	32+0,
-	32+4,
-	32+2,
-	32+6,
-	32+7,
-	32+4,
-	32+5,
-};
 
 class ExampleCubes : public entry::AppI
 {
 	void init(int _argc, char** _argv) BX_OVERRIDE
 	{
-		BX_UNUSED(s_cubeTriList, s_cubeTriStrip);
+		BX_UNUSED(s_cubeTriList);
 
 		Args args(_argc, _argv);
 
@@ -256,13 +382,13 @@ class ExampleCubes : public entry::AppI
 				);
 
 		// Create vertex stream declaration.
-		PosColorVertex::init();
+		PosColorVertexBlending::init();
 
 		// Create static vertex buffer.
 		m_vbh = bgfx::createVertexBuffer(
 				// Static data can be passed with bgfx::makeRef
 				bgfx::makeRef(s_cubeVertices, sizeof(s_cubeVertices) )
-				, PosColorVertex::ms_decl
+				, PosColorVertexBlending::ms_decl
 				);
 
 		// Create static index buffer.
@@ -272,10 +398,9 @@ class ExampleCubes : public entry::AppI
 				bgfx::makeRef(s_cubeTriList, sizeof(s_cubeTriList) )
 				);
 
-		u_matrices = bgfx::createUniform("u_matrices", bgfx::UniformType::Mat4);//, 11*11);
-
 		// Create program from shaders.
 		m_program = loadProgram("vs_cubes_skinning", "fs_cubes_skinning");
+		u_matrices = bgfx::createUniform("u_matrices", bgfx::UniformType::Mat4, 22);
 
 		m_timeOffset = bx::getHPCounter();
 	}
@@ -305,11 +430,11 @@ class ExampleCubes : public entry::AppI
 			const double freq = double(bx::getHPFrequency() );
 			const double toMs = 1000.0/freq;
 
-			float time = (float)( (now-m_timeOffset)/double(bx::getHPFrequency() ) );
+		//	float time = (float)( (now-m_timeOffset)/double(bx::getHPFrequency() ) );
 
 			// Use debug font to print information about this example.
 			bgfx::dbgTextClear();
-			bgfx::dbgTextPrintf(0, 1, 0x4f, "bgfx/examples/03-cubes-skinning");
+			bgfx::dbgTextPrintf(0, 1, 0x4f, "bgfx/examples/33-cubes-skinning");
 			bgfx::dbgTextPrintf(0, 2, 0x6f, "Description: Rendering static mesh with skinning information.");
 			bgfx::dbgTextPrintf(0, 3, 0x0f, "Frame: % 7.3f[ms]", double(frameTime)*toMs);
 
@@ -349,27 +474,34 @@ class ExampleCubes : public entry::AppI
 
 
 
-			// Submit 11x11 cubes.
-			float basemtx[16];
-			bx::mtxRotateXY(basemtx, 0.2, 0.4);
-
-			float matrices[16];// * 11 * 11];
+			// Submit cubes
+			// create 23 matrices:
+			// 0 is the base
+			// 1-23 are row
+			bx::float4x4_t matrices[23];
+			for(auto& m : matrices)
+			{
+				bx::mtxIdentity((float*)&m);
+			};
+			
+			for (uint32_t xx = 0; xx < 11; ++xx)
+			{
+				bx::float4x4_t& mtx = matrices[1 + xx];
+				bx::mtxTranslate((float*)&mtx, -15.0f + float(xx) * 3.0f, 0, 0);
+			}
+			
 			for (uint32_t yy = 0; yy < 11; ++yy)
 			{
-				for (uint32_t xx = 0; xx < 11; ++xx)
-				{
-					float* mtx = matrices; //&matrices[(yy * 11 + xx) * 16];
-					bx::mtxRotateXY(mtx, time + xx*0.21f, time + yy*0.37f);
-					mtx[12] = -15.0f + float(xx)*3.0f;
-					mtx[13] = -15.0f + float(yy)*3.0f;
-					mtx[14] = 0.0f;
-				}
+				bx::float4x4_t& mtx = matrices[12 + yy];
+				bx::mtxTranslate((float*)&mtx, 0, -15.0f + float(yy) * 3.0f, 0);
 			}
+			
 
+			// Submit 11x11 cubes.
 			{
 				// Set model matrix for rendering.
-				bgfx::setTransform(basemtx);
-				bgfx::setUniform(u_matrices, matrices); //, 11*11);
+				bgfx::setTransform(matrices, 23);
+				bgfx::setUniform(u_matrices, &matrices[1], 22);
 
 				// Set vertex and index buffer.
 				bgfx::setVertexBuffer(m_vbh);
